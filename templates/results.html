@@ -1,0 +1,181 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Option Pricing Results</title>
+    <link href="https://cdn.jsdelivr.net/npm/bootstrap@5.3.0-alpha1/dist/css/bootstrap.min.css" rel="stylesheet">
+    <link rel="stylesheet" href="{{ url_for('static', filename='css/style.css') }}">
+    <script src="https://cdn.plot.ly/plotly-latest.min.js"></script>
+</head>
+<body>
+    <div class="container-fluid mt-4">
+        <div class="row mb-3">
+            <div class="col-12">
+                <div class="d-flex justify-content-between align-items-center">
+                    <h1>Black-Scholes Option Pricing Results</h1>
+                    <a href="/" class="btn btn-primary">New Calculation</a>
+                </div>
+                <hr>
+            </div>
+        </div>
+
+        <!-- Option Parameters -->
+        <div class="row mb-4">
+            <div class="col-md-6">
+                <div class="card h-100">
+                    <div class="card-header bg-primary text-white">
+                        <h5 class="card-title mb-0">Option Parameters</h5>
+                    </div>
+                    <div class="card-body">
+                        <table class="table table-striped">
+                            <tr>
+                                <td>Stock Price (S₀):</td>
+                                <td>${{ "%.2f"|format(stock_price) }}</td>
+                            </tr>
+                            <tr>
+                                <td>Strike Price (K):</td>
+                                <td>${{ "%.2f"|format(strike_price) }}</td>
+                            </tr>
+                            <tr>
+                                <td>Risk-free Rate (r):</td>
+                                <td>{{ "%.2f"|format(interest_rate) }}%</td>
+                            </tr>
+                            <tr>
+                                <td>Time to Maturity (T):</td>
+                                <td>{{ "%.2f"|format(maturity) }} years</td>
+                            </tr>
+                            <tr>
+                                <td>Volatility (σ):</td>
+                                <td>{{ "%.2f"|format(volatility) }}%</td>
+                            </tr>
+                        </table>
+                    </div>
+                </div>
+            </div>
+            
+            <!-- Option Prices & Greeks -->
+            <div class="col-md-6">
+                <div class="card h-100">
+                    <div class="card-header bg-primary text-white">
+                        <h5 class="card-title mb-0">Option Prices & Greeks</h5>
+                    </div>
+                    <div class="card-body">
+                        <div class="row">
+                            <div class="col-md-6">
+                                <div class="alert alert-success">
+                                    <h5>Call Price: ${{ "%.2f"|format(call_price) }}</h5>
+                                </div>
+                            </div>
+                            <div class="col-md-6">
+                                <div class="alert alert-danger">
+                                    <h5>Put Price: ${{ "%.2f"|format(put_price) }}</h5>
+                                </div>
+                            </div>
+                        </div>
+                        
+                        <table class="table table-striped table-sm">
+                            <thead>
+                                <tr>
+                                    <th>Greek</th>
+                                    <th>Call Option</th>
+                                    <th>Put Option</th>
+                                </tr>
+                            </thead>
+                            <tbody>
+                                <tr>
+                                    <td>Delta (Δ)</td>
+                                    <td>{{ "%.4f"|format(delta_call) }}</td>
+                                    <td>{{ "%.4f"|format(delta_put) }}</td>
+                                </tr>
+                                <tr>
+                                    <td>Gamma (Γ)</td>
+                                    <td colspan="2" class="text-center">{{ "%.4f"|format(gamma) }}</td>
+                                </tr>
+                                <tr>
+                                    <td>Vega (ν)</td>
+                                    <td colspan="2" class="text-center">{{ "%.4f"|format(vega) }}</td>
+                                </tr>
+                                <tr>
+                                    <td>Theta (Θ) daily</td>
+                                    <td>{{ "%.4f"|format(theta_call/365) }}</td>
+                                    <td>{{ "%.4f"|format(theta_put/365) }}</td>
+                                </tr>
+                                <tr>
+                                    <td>Rho (ρ) ÷100</td>
+                                    <td>{{ "%.4f"|format(rho_call/100) }}</td>
+                                    <td>{{ "%.4f"|format(rho_put/100) }}</td>
+                                </tr>
+                            </tbody>
+                        </table>
+                    </div>
+                </div>
+            </div>
+        </div>
+        
+        <!-- Charts -->
+        <div class="row">
+            <div class="col-12 mb-4">
+                <div class="card">
+                    <div class="card-header bg-primary text-white">
+                        <h5 class="card-title mb-0">Option Prices vs Stock Price</h5>
+                    </div>
+                    <div class="card-body">
+                        <div id="stock-price-chart" style="height: 400px;"></div>
+                    </div>
+                </div>
+            </div>
+            
+            <div class="col-md-6 mb-4">
+                <div class="card">
+                    <div class="card-header bg-primary text-white">
+                        <h5 class="card-title mb-0">Option Prices vs Volatility</h5>
+                    </div>
+                    <div class="card-body">
+                        <div id="volatility-chart" style="height: 400px;"></div>
+                    </div>
+                </div>
+            </div>
+            
+            <div class="col-md-6 mb-4">
+                <div class="card">
+                    <div class="card-header bg-primary text-white">
+                        <h5 class="card-title mb-0">Option Greeks</h5>
+                    </div>
+                    <div class="card-body">
+                        <div id="greeks-chart" style="height: 400px;"></div>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </div>
+    
+    <script src="https://cdn.jsdelivr.net/npm/bootstrap@5.3.0-alpha1/dist/js/bootstrap.bundle.min.js"></script>
+    
+    <script>
+        document.addEventListener('DOMContentLoaded', function() {
+            // Render the charts
+            const stockPriceData = JSON.parse('{{ stock_price_chart | safe }}');
+            const volatilityData = JSON.parse('{{ volatility_chart | safe }}');
+            const greeksData = JSON.parse('{{ greeks_chart | safe }}');
+            
+            Plotly.newPlot('stock-price-chart', stockPriceData.data, stockPriceData.layout);
+            Plotly.newPlot('volatility-chart', volatilityData.data, volatilityData.layout);
+            Plotly.newPlot('greeks-chart', greeksData.data, greeksData.layout);
+            
+            // Make charts responsive
+            window.onresize = function() {
+                Plotly.relayout('stock-price-chart', {
+                    'width': document.getElementById('stock-price-chart').clientWidth
+                });
+                Plotly.relayout('volatility-chart', {
+                    'width': document.getElementById('volatility-chart').clientWidth
+                });
+                Plotly.relayout('greeks-chart', {
+                    'width': document.getElementById('greeks-chart').clientWidth
+                });
+            };
+        });
+    </script>
+</body>
+</html>
