@@ -80,6 +80,24 @@ git commit -m "Deploy to Heroku"
 git push heroku main
 ```
 
+## Deployment to Render
+
+This application can be easily deployed to Render's free tier:
+
+1. Ensure your repository is pushed to GitHub
+2. Sign up for a free Render account at https://render.com
+3. From your Render dashboard, click **New** and select **Web Service**
+4. Connect to your GitHub repository
+5. Configure the web service with these settings:
+   - **Name**: `black-scholes-calculator` (or any name you prefer)
+   - **Environment**: `Python`
+   - **Build Command**: `pip install -r requirements.txt`
+   - **Start Command**: `gunicorn app:app`
+   - **Instance Type**: Free
+
+6. Click **Create Web Service** and wait for deployment to complete
+7. Your application will be available at the URL provided by Render
+
 ## Theory
 
 The Black-Scholes model is a mathematical model for pricing European-style options. The model assumes:
